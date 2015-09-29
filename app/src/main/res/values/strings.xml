@@ -1,6 +1,10 @@
 <resources>
-    <string name="app_name">Barcode</string>
+    <string name="app_name">Barcode Login</string>
 
     <string name="success">Scan complete.</string>
-    <string name="action_settings">Settings</string>
+
+    <string name="title_activity_login">Admin Sign In</string>
+    <string name="login_user">Student Number</string>
+    <string name="login_password">Password</string>
+
 </resources>
