@@ -6,8 +6,11 @@ import android.widget.Toast;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -26,11 +29,15 @@ public class RequestLogin extends AsyncTask<String, Void, String> {
             HttpURLConnection connection = null;
 
             try {
-                String params = "barnum=" + URLEncoder.encode(data[i], "UTF-8"); //studentnum is the name of the parameter in the web address
-
-                //url = new URL("http://4659warriors.com"); //ADDRESS TO CONTENT DATA TO THE RUBY CONTROLLER FOR PARSING BARCODE CONTENT
-                url = new URL("http://barcodelogin.herokuapp.com/loginapp?" + params);
+                String params = "identifier=" + URLEncoder.encode(LoginActivity.studentnumber, "UTF-8") +
+                        "&password=" + URLEncoder.encode(LoginActivity.password, "UTF-8") +
+                        "&check=" + ScannerActivity.mode + //"in" and "out"
+                        "&text=" + URLEncoder.encode(data[i], "UTF-8");
+                url = new URL("http://PLACEHOLDERURL.com/abc?" + params);
                 connection = (HttpURLConnection) url.openConnection();
+
+                connection.setRequestProperty("Content-Type", "application/json;charset=utf-8");
+                connection.setRequestProperty("X-Requested-With", "XMLHttpRequest");
 
                 //Get Response
                 InputStream is = connection.getInputStream();
@@ -52,22 +59,39 @@ public class RequestLogin extends AsyncTask<String, Void, String> {
             if (isCancelled()) break;
         }
 
-        String res = "";
-
-        try {
-            res = response.getString("message");
-        } catch (Exception e){
-
-        }
+        String res = response.optString("success");
 
         return response != null ? res : "Internal error.";
     }
 
     protected void onPostExecute(String result) {
-        Toast toast = Toast.makeText(ScannerActivity.instance.getApplicationContext(),
-                result, Toast.LENGTH_SHORT);
-        if(!toast.getView().isShown()){
-            toast.show();
+
+        String msg;
+
+        switch (result){
+            case "true":
+                if(ScannerActivity.mode == "in") {
+                    msg = "User logged in.";
+                } else {
+                    msg = "User logged out.";
+                }
+                break;
+            case "false":
+                if(ScannerActivity.mode == "in") {
+                    msg = "User is already logged in.";
+                } else {
+                    msg = "User is already logged out.";
+                }
+                break;
+            default:
+                msg = result;
+                break;
+        }
+
+        ScannerActivity.toast = Toast.makeText(ScannerActivity.instance.getApplicationContext(),
+                msg, Toast.LENGTH_SHORT);
+        if(!ScannerActivity.toast.getView().isShown()){
+            ScannerActivity.toast.show();
         }
     }
 }

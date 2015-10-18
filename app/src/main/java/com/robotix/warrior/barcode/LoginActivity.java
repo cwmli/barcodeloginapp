@@ -14,11 +14,15 @@ import android.widget.Toast;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.Scanner;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -35,7 +39,7 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        
+
         instance = this;
         verified = false;
 
@@ -45,11 +49,6 @@ public class LoginActivity extends AppCompatActivity {
             public void onClick(View v) {
                 checkFields();
                 new VerifyAdmin().execute(studentnumber, password);
-
-                if(verified){
-                    Intent scanner = new Intent(instance, ScannerActivity.class);
-                    startActivity(scanner);
-                }
             }
         });
     }
@@ -98,11 +97,22 @@ public class LoginActivity extends AppCompatActivity {
             HttpURLConnection connection = null;
 
             try {
-                String params = "user=" + URLEncoder.encode(data[0], "UTF-8") + "&pass=" + URLEncoder.encode(data[1], "UTF-8");
+                String params = "identifier=" + URLEncoder.encode(data[0], "UTF-8") + "&password=" + URLEncoder.encode(data[1], "UTF-8");
 
-                //url = new URL("http://4659warriors.com"); //ADDRESS TO CONTENT DATA TO THE RUBY CONTROLLER FOR PARSING BARCODE CONTENT
-                url = new URL("http://barcodelogin.herokuapp.com/loginapp?" + params);
+                url = new URL("http://PLACEHOLDERURL.com/abc.json");
                 connection = (HttpURLConnection) url.openConnection();
+
+                connection.setDoInput(true);
+                connection.setDoOutput(true);
+                connection.setUseCaches(true);
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+                OutputStream os = connection.getOutputStream();
+                BufferedWriter wr = new BufferedWriter(new OutputStreamWriter(os));
+                wr.write(params);
+                wr.flush();
+                wr.close();
 
                 //Get Response
                 InputStream is = connection.getInputStream();
@@ -121,15 +131,8 @@ public class LoginActivity extends AppCompatActivity {
                     connection.disconnect();
                 }
             }
+            String res = response.optString("access");
 
-
-            String res = "";
-
-            try {
-                res = response.getString("status");
-            } catch (Exception e){
-
-            }
             return response != null ? res : "Internal error.";
         }
 
@@ -138,25 +141,27 @@ public class LoginActivity extends AppCompatActivity {
             String msg;
 
             switch(result) {
-                case "OK":
+                case "2": //admin
                     msg = "Verified.";
                     LoginActivity.verified = true;
+                    Intent scanner = new Intent(instance, ScannerActivity.class);
+                    instance.startActivity(scanner);
                     break;
-                case "INSUFFICIENT":
+                case "1": //regular
                     msg = "Your account does not have admin privileges";
                     break;
-                case "INVALID":
+                case "0": //invalid
                     msg = "Unknown username and/or password";
                     break;
-                default:
+                default: //unknown result
                     msg = "Unable to reach server.";
                     break;
             }
 
-            Toast toast = Toast.makeText(instance.getApplicationContext(),
+            ScannerActivity.toast = Toast.makeText(instance.getApplicationContext(),
                     msg, Toast.LENGTH_SHORT);
-            if(!toast.getView().isShown()){
-                toast.show();
+            if(!ScannerActivity.toast.getView().isShown()){
+                ScannerActivity.toast.show();
             }
 
         }

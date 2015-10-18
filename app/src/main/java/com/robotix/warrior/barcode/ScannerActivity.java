@@ -1,14 +1,21 @@
 package com.robotix.warrior.barcode;
 
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.CompoundButton;
+import android.widget.Switch;
+import android.widget.Toast;
 
 import com.google.zxing.ResultPoint;
 import com.journeyapps.barcodescanner.BarcodeCallback;
 import com.journeyapps.barcodescanner.BarcodeResult;
+import com.journeyapps.barcodescanner.BarcodeView;
+import com.journeyapps.barcodescanner.CaptureManager;
 import com.journeyapps.barcodescanner.CompoundBarcodeView;
 
 import java.util.List;
@@ -17,21 +24,19 @@ import java.util.List;
 public class ScannerActivity extends AppCompatActivity {
 
     public static AppCompatActivity instance;
-    private CompoundBarcodeView barcodeView;
-    private String lastResult = null;
+    public static String mode = "in";
+    public static Toast toast;
 
+    private BarcodeView barcodeView;
+    private Button scanButton;
+    private Switch logoutMode;
 
     private BarcodeCallback callback = new BarcodeCallback() {
         @Override
         public void barcodeResult(BarcodeResult result) {
             String newResult = result.getText();
             if (newResult != null) {
-                if(lastResult == null){
-                    lastResult = newResult;
-                }
-
-                if(lastResult != newResult) {
-                    barcodeView.setStatusText(newResult);
+                if(!toast.getView().isShown()){
                     new RequestLogin().execute(newResult);
                 }
             }
@@ -73,8 +78,29 @@ public class ScannerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         instance = this;
 
-        barcodeView = (CompoundBarcodeView) findViewById(R.id.view);
-        barcodeView.decodeContinuous(callback);
+        barcodeView = (BarcodeView) findViewById(R.id.view);
+        //barcodeView.decodeContinuous(callback);
+
+        logoutMode = (Switch) findViewById(R.id.logout_mode);
+        logoutMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    mode = "out";
+                } else {
+                    mode = "in";
+                }
+            }
+        });
+
+        scanButton = (Button) findViewById(R.id.scan);
+        scanButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                triggerScan(null);
+            }
+        });
     }
 
     @Override
